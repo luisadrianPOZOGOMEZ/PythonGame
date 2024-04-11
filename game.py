@@ -1,14 +1,27 @@
 import pygame
 from network import Network
+from maze import Maze, WALL_COLOR, PATH_COLOR, GOAL_COLOR, CELL_SIZE
 
-class Player():
-    segment_width = segment_height = 10
-
+class Player(object):
     def __init__(self, startx, starty, player_id, color=(0,255,0)):
         self.segments = [(startx, starty)]
-        self.velocity = 10
-        self.color = color
         self.player_id = player_id
+        self.color = color
+        self.segment_width = 20
+        self.segment_height = 20
+        self.velocity = 10
+
+    def move(self, direction):
+        x, y = self.segments[0]
+        if direction == 0:  # right
+            self.segments.insert(0, (x + self.velocity, y))
+        elif direction == 1:  # left
+            self.segments.insert(0, (x - self.velocity, y))
+        elif direction == 2:  # up
+            self.segments.insert(0, (x, y - self.velocity))
+        elif direction == 3:  # down
+            self.segments.insert(0, (x, y + self.velocity))
+        self.segments.pop()
 
     def draw(self, g):
         for segment in self.segments:
@@ -17,33 +30,16 @@ class Player():
             text = font.render("P " + str(self.player_id), True, (94, 51, 255))
             g.blit(text, (segment[0] + 2, segment[1] + 2))
 
-    def move(self, dirn):
-        x, y = self.segments[0]
-
-        if dirn == 0:
-            x += self.velocity
-        elif dirn == 1:
-            x -= self.velocity
-        elif dirn == 2:
-            y -= self.velocity
-        else:
-            y += self.velocity
-
-        self.segments = [(x, y)] + self.segments[:-1]
-
-    def grow(self):
-        x, y = self.segments[-1]
-        self.segments.append((x, y))
-
 class Game:
-
     def __init__(self, w, h):
         self.net = Network()
         self.width = w
         self.height = h
-        self.player = Player(50, 50, 1)
-        self.player2 = Player(100,100, 2)
-        self.canvas = Canvas(self.width, self.height, "Testing...")
+        self.maze = Maze(self.width, self.height)
+        start_pos, self.goal_pos = self.maze.start_pos, self.maze.goal_pos
+        self.player = Player(start_pos[0][0], start_pos[0][1], 1)
+        self.player2 = Player(start_pos[1][0], start_pos[1][1], 2)
+        self.canvas = Canvas(self.width, self.height, "Minotaur Maze")
 
     def run(self):
         clock = pygame.time.Clock()
@@ -79,8 +75,14 @@ class Game:
             self.player2.segments[0] = self.parse_data(self.send_data())
 
             self.canvas.draw_background()
+            self.maze.draw(self.canvas.get_canvas())
             self.player.draw(self.canvas.get_canvas())
             self.player2.draw(self.canvas.get_canvas())
+
+            # Draw the goal
+            if self.goal_pos:
+                pygame.draw.rect(self.canvas.get_canvas(), GOAL_COLOR, (self.goal_pos[0], self.goal_pos[1], CELL_SIZE, CELL_SIZE))
+
             self.canvas.update()
 
         pygame.quit()
@@ -99,9 +101,8 @@ class Game:
             return 0,0
 
 class Canvas:
-
     def __init__(self, w, h, name="None"):
-        pygame.font.init()  # Inicializa la fuente aquí
+        pygame.font.init()
         self.width = w
         self.height = h
         self.screen = pygame.display.set_mode((w,h))
@@ -114,11 +115,10 @@ class Canvas:
     def draw_text(self, text, size, x, y):
         font = pygame.font.SysFont("comicsans", size)
         render = font.render(text, 1, (0,0,0))
-
         self.screen.blit(render, (x,y))
 
     def get_canvas(self):
         return self.screen
 
     def draw_background(self):
-        self.screen.fill((255,255,255))
+        self.screen.fill((0, 0, 0))
