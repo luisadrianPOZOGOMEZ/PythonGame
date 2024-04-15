@@ -46,6 +46,7 @@ class Game:
         self.player = Player(start_pos[0][0], start_pos[0][1], 1)
         self.player2 = Player(start_pos[1][0], start_pos[1][1], 2)
         self.canvas = Canvas(self.width, self.height, "Minotaur Maze")
+        self.player_won = False
 
     def run(self):
         clock = pygame.time.Clock()
@@ -56,7 +57,6 @@ class Game:
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     run = False
-
                 if event.type == pygame.K_ESCAPE:
                     run = False
 
@@ -65,20 +65,40 @@ class Game:
             if keys[pygame.K_RIGHT]:
                 if self.player.segments[0][0] <= self.width - self.player.velocity:
                     self.player.move(0, self.maze)
+                    if abs(self.player.segments[0][0] - self.goal_pos[0]) < CELL_SIZE and abs(self.player.segments[0][1] - self.goal_pos[1]) < CELL_SIZE:
+                        print("Jugador 1 ha llegado al objetivo!")
+                        self.player_won = True
+                        run = False
 
             if keys[pygame.K_LEFT]:
                 if self.player.segments[0][0] >= self.player.velocity:
                     self.player.move(1, self.maze)
+                    if abs(self.player.segments[0][0] - self.goal_pos[0]) < CELL_SIZE and abs(self.player.segments[0][1] - self.goal_pos[1]) < CELL_SIZE:
+                        print("Jugador 1 ha llegado al objetivo!")
+                        self.player_won = True
+                        run = False
 
             if keys[pygame.K_UP]:
                 if self.player.segments[0][1] >= self.player.velocity:
                     self.player.move(2, self.maze)
+                    if abs(self.player.segments[0][0] - self.goal_pos[0]) < CELL_SIZE and abs(self.player.segments[0][1] - self.goal_pos[1]) < CELL_SIZE:
+                        print("Jugador 1 ha llegado al objetivo!")
+                        self.player_won = True
+                        run = False
 
             if keys[pygame.K_DOWN]:
                 if self.player.segments[0][1] <= self.height - self.player.velocity:
                     self.player.move(3, self.maze)
+                    if abs(self.player.segments[0][0] - self.goal_pos[0]) < CELL_SIZE and abs(self.player.segments[0][1] - self.goal_pos[1]) < CELL_SIZE:
+                        print("Jugador 1 ha llegado al objetivo!")
+                        self.player_won = True
+                        run = False
 
             self.player2.segments[0] = self.parse_data(self.send_data())
+            if abs(self.player2.segments[0][0] - self.goal_pos[0]) < CELL_SIZE and abs(self.player2.segments[0][1] - self.goal_pos[1]) < CELL_SIZE:
+                print("Jugador 2 ha llegado al objetivo!")
+                self.player_won = True
+                run = False
 
             self.canvas.draw_background()
             self.maze.draw(self.canvas.get_canvas())
@@ -88,8 +108,12 @@ class Game:
             # Draw the goal
             if self.goal_pos:
                 pygame.draw.rect(self.canvas.get_canvas(), GOAL_COLOR,
-                                 (self.goal_pos[0], self.goal_pos[1], CELL_SIZE, CELL_SIZE))
+                                (self.goal_pos[0], self.goal_pos[1], CELL_SIZE, CELL_SIZE))
 
+            self.canvas.update()
+
+        if self.player_won:
+            self.show_winner_message()
             self.canvas.update()
 
         pygame.quit()
@@ -106,6 +130,11 @@ class Game:
             return int(d[0]), int(d[1])
         except:
             return 0,0
+
+    def show_winner_message(self):
+        self.canvas.draw_text("¡Felicidades, has ganado!", 50, self.width // 2 - 200, self.height // 2 - 50)
+        self.canvas.update()
+        pygame.time.delay(2000)
 
 class Canvas:
     def __init__(self, w, h, name="None"):
