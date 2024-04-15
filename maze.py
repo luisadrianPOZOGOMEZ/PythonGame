@@ -1,11 +1,10 @@
 import pygame
 import random
 
-# Configuración del laberinto
 CELL_SIZE = 30
-WALL_COLOR = (139, 69, 19)  # Color marrón oscuro para las paredes
-PATH_COLOR = (255, 228, 196)  # Color beige claro para los caminos
-GOAL_COLOR = (255, 0, 0)  # Color rojo para la meta
+WALL_COLOR = (139, 69, 19)
+PATH_COLOR = (255, 228, 196)
+GOAL_COLOR = (255, 0, 0)
 
 class Maze:
     def __init__(self, width, height):
@@ -13,24 +12,42 @@ class Maze:
         self.height = height
         self.cells = self.create_maze()
         self.squares = self.create_squares()
-        self.start_pos = self.find_start_positions()
-        self.goal_pos = self.find_goal_position()
+        self.start_pos, self.goal_pos = self.find_start_and_goal_positions()
 
     def create_maze(self):
         maze_width = self.width // CELL_SIZE
         maze_height = self.height // CELL_SIZE
-
         cells = [[False for _ in range(maze_width)] for _ in range(maze_height)]
 
         # Crear un laberinto de minotauro con caminos abiertos y cerrados
         for y in range(maze_height):
             for x in range(maze_width):
-                if x == 0 or x == maze_width - 1 or y == 0 or y == maze_height - 1 or (x % 2 == 0 and y % 2 == 0):
+                if x == 0 or x == maze_width - 1 or y == 0 or y == maze_height - 1:
                     cells[y][x] = True
-                elif random.randint(0, 100) < 30:
-                    cells[y][x] = True
+                else:
+                    cells[y][x] = random.randint(0, 100) < 98
+
+        # Asegurar un camino desde los puntos de inicio a la meta
+        self.ensure_path(cells, 1, 1, maze_width - 2, maze_height - 2)
 
         return cells
+
+    def ensure_path(self, cells, x1, y1, x2, y2):
+        if x1 > x2 or y1 > y2:
+            return
+
+        # Crear un camino horizontal
+        for x in range(x1, x2 + 2):
+            cells[y1][x] = False
+            cells[y2][x] = False
+
+        # Crear un camino vertical
+        for y in range(y1, y2 + 2):
+            cells[y][x1] = False
+            cells[y][x2] = False
+
+        # Dividir recursivamente el laberinto
+        self.ensure_path(cells, x1 + 2, y1 + 2, x2 - 2, y2 - 2)
 
     def create_squares(self):
         squares = []
@@ -42,26 +59,28 @@ class Maze:
                 squares.append(((0, y*CELL_SIZE), (self.width, y*CELL_SIZE), 0.5))
         return squares
 
-    def find_start_positions(self):
+    def find_start_and_goal_positions(self):
         start_pos = []
-        for y in range(len(self.cells)):
-            for x in range(len(self.cells[y])):
-                if not self.cells[y][x]:
-                    start_pos.append((x*CELL_SIZE, y*CELL_SIZE))
-                    if len(start_pos) == 2:
-                        return start_pos
-        return start_pos
+        maze_width = self.width // CELL_SIZE
+        maze_height = self.height // CELL_SIZE
 
-    def find_goal_position(self):
+        # Encontrar las posiciones iniciales de los jugadores
         for y in range(len(self.cells)):
             for x in range(len(self.cells[y])):
                 if not self.cells[y][x]:
-                    if random.randint(0, 100) < 10:
-                        return (x*CELL_SIZE, y*CELL_SIZE)
-        return None
+                    if len(start_pos) < 2:
+                        start_pos.append((x * CELL_SIZE, y * CELL_SIZE))
+
+        # Establecer la posición de la meta en el centro del laberinto
+        goal_x = (maze_width // 2) * CELL_SIZE
+        goal_y = (maze_height // 2) * CELL_SIZE
+        goal_pos = (goal_x, goal_y)
+
+        return start_pos, goal_pos
 
     def draw(self, screen):
-        screen.fill((0, 0, 0))  # Limpiar la pantalla con color negro
+        screen.fill((0, 0, 0))
+
         for y in range(len(self.cells)):
             for x in range(len(self.cells[y])):
                 if self.cells[y][x]:
@@ -69,7 +88,6 @@ class Maze:
                 else:
                     pygame.draw.rect(screen, PATH_COLOR, (x*CELL_SIZE, y*CELL_SIZE, CELL_SIZE, CELL_SIZE))
 
-        # Dibujar la meta
         if self.goal_pos:
             pygame.draw.rect(screen, GOAL_COLOR, (self.goal_pos[0], self.goal_pos[1], CELL_SIZE, CELL_SIZE))
 
@@ -87,10 +105,8 @@ class Maze:
                     new_x1 = square[1][0] - square[2]
                     new_y1 = square[1][1]
                 new_squares.append(((new_x0, new_y0), (new_x1, new_y1)))
-
                 pygame.draw.rect(screen, (255, 255, 255), (new_x0, new_y0, CELL_SIZE, CELL_SIZE))
                 pygame.draw.rect(screen, (255, 255, 255), (new_x1, new_y1, CELL_SIZE, CELL_SIZE))
-
         self.squares = new_squares
 
         return self.start_pos, self.goal_pos

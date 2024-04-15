@@ -11,17 +11,23 @@ class Player(object):
         self.segment_height = 20
         self.velocity = 10
 
-    def move(self, direction):
+    def move(self, direction, maze):
         x, y = self.segments[0]
+        new_x, new_y = x, y
+
         if direction == 0:  # right
-            self.segments.insert(0, (x + self.velocity, y))
+            new_x = x + self.velocity
         elif direction == 1:  # left
-            self.segments.insert(0, (x - self.velocity, y))
+            new_x = x - self.velocity
         elif direction == 2:  # up
-            self.segments.insert(0, (x, y - self.velocity))
+            new_y = y - self.velocity
         elif direction == 3:  # down
-            self.segments.insert(0, (x, y + self.velocity))
-        self.segments.pop()
+            new_y = y + self.velocity
+
+        # Comprobar si la nueva posición está dentro de los límites del laberinto y no hay pared
+        if 0 <= new_x < maze.width and 0 <= new_y < maze.height and not maze.cells[new_y // CELL_SIZE][new_x // CELL_SIZE]:
+            self.segments.insert(0, (new_x, new_y))
+            self.segments.pop()
 
     def draw(self, g):
         for segment in self.segments:
@@ -58,19 +64,19 @@ class Game:
 
             if keys[pygame.K_RIGHT]:
                 if self.player.segments[0][0] <= self.width - self.player.velocity:
-                    self.player.move(0)
+                    self.player.move(0, self.maze)
 
             if keys[pygame.K_LEFT]:
                 if self.player.segments[0][0] >= self.player.velocity:
-                    self.player.move(1)
+                    self.player.move(1, self.maze)
 
             if keys[pygame.K_UP]:
                 if self.player.segments[0][1] >= self.player.velocity:
-                    self.player.move(2)
+                    self.player.move(2, self.maze)
 
             if keys[pygame.K_DOWN]:
                 if self.player.segments[0][1] <= self.height - self.player.velocity:
-                    self.player.move(3)
+                    self.player.move(3, self.maze)
 
             self.player2.segments[0] = self.parse_data(self.send_data())
 
@@ -81,7 +87,8 @@ class Game:
 
             # Draw the goal
             if self.goal_pos:
-                pygame.draw.rect(self.canvas.get_canvas(), GOAL_COLOR, (self.goal_pos[0], self.goal_pos[1], CELL_SIZE, CELL_SIZE))
+                pygame.draw.rect(self.canvas.get_canvas(), GOAL_COLOR,
+                                 (self.goal_pos[0], self.goal_pos[1], CELL_SIZE, CELL_SIZE))
 
             self.canvas.update()
 
