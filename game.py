@@ -9,7 +9,7 @@ class Player(object):
         self.color = color
         self.segment_width = 20
         self.segment_height = 20
-        self.velocity = 10
+        self.velocity = 3
 
     def move(self, direction, maze):
         x, y = self.segments[0]

@@ -1,7 +1,7 @@
 import pygame
 import random
 
-CELL_SIZE = 30
+CELL_SIZE = 38
 WALL_COLOR = (139, 69, 19)
 PATH_COLOR = (255, 228, 196)
 GOAL_COLOR = (255, 0, 0)
@@ -80,6 +80,12 @@ class Maze:
 
     def draw(self, screen):
         screen.fill((0, 0, 0))
+
+        # Dibujar la barrera alrededor de la pantalla
+        pygame.draw.rect(screen, WALL_COLOR, (0, 0, self.width, CELL_SIZE))  # Arriba
+        pygame.draw.rect(screen, WALL_COLOR, (0, 0, CELL_SIZE, self.height))  # Izquierda
+        pygame.draw.rect(screen, WALL_COLOR, (0, self.height - CELL_SIZE, self.width, CELL_SIZE))  # Abajo
+        pygame.draw.rect(screen, WALL_COLOR, (self.width - CELL_SIZE, 0, CELL_SIZE, self.height))  # Derecha
 
         for y in range(len(self.cells)):
             for x in range(len(self.cells[y])):
