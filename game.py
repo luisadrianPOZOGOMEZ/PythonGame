@@ -9,7 +9,7 @@ class Player(object):
         self.color = color
         self.segment_width = 20
         self.segment_height = 20
-        self.velocity = 3
+        self.velocity = 10
 
     def move(self, direction, maze):
         x, y = self.segments[0]
@@ -115,6 +115,8 @@ class Game:
         if self.player_won:
             self.show_winner_message()
             self.canvas.update()
+            pygame.time.delay(2000)
+            self.restart_game()  # Reiniciar el juego
 
         pygame.quit()
 
@@ -135,6 +137,13 @@ class Game:
         self.canvas.draw_text("¡Felicidades, has ganado!", 50, self.width // 2 - 200, self.height // 2 - 50)
         self.canvas.update()
         pygame.time.delay(2000)
+
+    def restart_game(self):
+        self.player_won = False
+        start_pos, self.goal_pos = self.maze.start_pos, self.maze.goal_pos
+        self.player.segments = [start_pos[0]]
+        self.player2.segments = [start_pos[1]]
+
 
 class Canvas:
     def __init__(self, w, h, name="None"):

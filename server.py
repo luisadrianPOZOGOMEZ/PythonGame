@@ -1,58 +1,45 @@
-import socket
-from _thread import *
-import sys
+import asyncio
 
-s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-
-server = ''
-port = 5555
-
-server_ip = socket.gethostbyname(server)
-
-try:
-    s.bind((server, port))
-
-except socket.error as e:
-    print(str(e))
-
-s.listen(2)
-print("Waiting for a connection")
-
-currentId = "0"
-pos = ["0:50,50", "1:100,100"]
-def threaded_client(conn):
+async def handle_client(reader, writer):
     global currentId, pos
-    conn.send(str.encode(currentId))
+    writer.write(str.encode(currentId))
+    await writer.drain()
+
     currentId = "1"
-    reply = ''
     while True:
         try:
-            data = conn.recv(2048)
+            data = await reader.read(2048)
             reply = data.decode('utf-8')
             if not data:
-                conn.send(str.encode("Goodbye"))
+                writer.write(str.encode("Adios"))
+                await writer.drain()
                 break
             else:
-                print("Recieved: " + reply)
+                print("Recibiendo: " + reply)
                 arr = reply.split(":")
-                id = int(arr[0])
-                pos[id] = reply
+                client_id = int(arr[0])
+                pos[client_id] = reply
 
-                if id == 0: nid = 1
-                if id == 1: nid = 0
+                next_client_id = 1 if client_id == 0 else 0
+                reply = pos[next_client_id]
+                print("Enviando: " + reply)
 
-                reply = pos[nid][:]
-                print("Sending: " + reply)
-
-            conn.sendall(str.encode(reply))
+            writer.write(str.encode(reply))
+            await writer.drain()
         except:
             break
 
-    print("Connection Closed")
-    conn.close()
+    print("Conexion cerrada")
+    writer.close()
 
-while True:
-    conn, addr = s.accept()
-    print("Connected to: ", addr)
+async def main():
+    server = await asyncio.start_server(
+        handle_client, '10.10.0.54', 5555)
 
-    start_new_thread(threaded_client, (conn,))
+    async with server:
+        await server.serve_forever()
+
+currentId = "0"
+pos = ["0:50,50", "1:100,100"]
+
+asyncio.run(main())
